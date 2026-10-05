@@ -1,0 +1,3 @@
+# The project is built on Windows and Linux. Pinning EOL keeps a Windows checkout
+# from rewriting every file and producing diff churn against CI.
+* text=auto eol=lf
