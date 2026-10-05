@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# Creating a release with GITHUB_TOKEN needs this; the default is read-only.
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: windows asset
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - run: bun install --frozen-lockfile
+
+      # Full check, not just compile. test.yml does not run for tags, and a tag
+      # should never be the thing that discovers the build was broken.
+      - run: bun run check
+
+      # A bundle that cannot print its own help text is not shippable.
+      - run: .\dist\app.exe help
+
+      # Flat, because the exe reads .env from its working directory, so the user
+      # must end up with app.exe and .env side by side. Never ship a real .env.
+      - name: zip
+        run: Compress-Archive -Path dist\app.exe, .env.example, LICENSE, README.md -DestinationPath "sippol-integrator-${{ github.ref_name }}-windows-x64.zip"
+
+      # gh is preinstalled on the runner, so no third-party release action is needed.
+      - name: publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${{ github.ref_name }}" "sippol-integrator-${{ github.ref_name }}-windows-x64.zip" --generate-notes

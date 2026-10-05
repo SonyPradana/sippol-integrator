@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>fixture login that succeeds</title>
+  </head>
+  <body>
+    <h1>fixture login that succeeds</h1>
+    <form
+      onsubmit="
+        event.preventDefault();
+        location.href = 'target.html';
+      "
+    >
+      <label for="fx-user">user</label>
+      <input id="fx-user" type="text" />
+
+      <label for="fx-pass">pass</label>
+      <input id="fx-pass" type="password" />
+
+      <input id="fx-submit" type="submit" value="LOGIN" />
+    </form>
+  </body>
+</html>

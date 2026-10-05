@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>fixture target</title>
+  </head>
+  <body>
+    <h1>fixture target</h1>
+
+    <!-- The real page renders the date range into inputs; the click handler reads these. -->
+    <label for="fx-from">from</label>
+    <input id="fx-from" name="tanggal_awal" value="01-01-2030" />
+
+    <label for="fx-to">to</label>
+    <input id="fx-to" name="tanggal_akhir" value="05-01-2030" />
+
+    <table>
+      <tr>
+        <th>No</th>
+        <th>Label</th>
+        <th>Action</th>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td>fake row alpha</td>
+        <td><button id="fx-ok" data-loading-text="Loading..">send all</button></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>fake row bravo</td>
+        <td><button id="fx-fail" data-loading-text="Loading..">send all</button></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>fake row charlie</td>
+        <td><button id="fx-silent" data-loading-text="Loading..">send all</button></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>fake row delta</td>
+        <td><button id="fx-locked" data-loading-text="Loading.." disabled>send all</button></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>fake row echo</td>
+        <td><button id="fx-sync">send all</button></td>
+      </tr>
+    </table>
+
+    <script>
+      // Mirrors the real page: disable while in flight, alert, then reload on success.
+      function wire(id, reply, reload) {
+        var button = document.getElementById(id);
+        button.addEventListener("click", function () {
+          var text = button.textContent;
+          button.textContent = "Loading..";
+          button.setAttribute("disabled", "disabled");
+          setTimeout(function () {
+            alert(reply);
+            if (reload) {
+              button.textContent = "All Done";
+              button.removeAttribute("disabled");
+              location.reload();
+            } else {
+              button.textContent = text;
+              button.removeAttribute("disabled");
+            }
+          }, 150);
+        });
+      }
+
+      wire("fx-ok", "fixture: accepted", true);
+      wire("fx-fail", "fixture: rejected", false);
+
+      // Alerts straight from the handler, with no setTimeout. This freezes the page's
+      // JS thread, so a naive `await view.click()` never returns.
+      document.getElementById("fx-sync").addEventListener("click", function () {
+        alert("fixture: synchronous alert");
+      });
+    </script>
+  </body>
+</html>

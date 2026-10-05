@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>login that keeps the form</title>
+  </head>
+  <body>
+    <form
+      onsubmit="
+        event.preventDefault();
+        location.href = 'target-form.html';
+      "
+    >
+      <input id="fx-user" type="text" />
+      <input id="fx-pass" type="password" />
+      <input id="fx-submit" type="submit" value="LOGIN" />
+    </form>
+  </body>
+</html>

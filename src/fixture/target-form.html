@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>target that keeps a login form in its layout</title>
+  </head>
+  <body>
+    <h1>logged in</h1>
+    <p>
+      Some apps render the login form on every page's layout, with the same field ids. A field-based
+      check would call this a failed login, so auth compares URLs instead.
+    </p>
+    <aside>
+      <form>
+        <input id="fx-user" type="text" />
+        <input id="fx-pass" type="password" />
+      </form>
+    </aside>
+  </body>
+</html>
