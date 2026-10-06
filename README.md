@@ -66,14 +66,16 @@ button must read `enabled`.
 ## Build
 
 ```bash
-bun run compile         # dist/app.exe on Windows, dist/app on macOS/Linux
-bun run compile:linux   # dist/app, cross-compiled for Linux x64
+bun run compile   # dist/app.exe on Windows, dist/app elsewhere
 ```
 
 The executable bundles Bun and this code, but **not** a browser — Chrome,
 Chromium, Edge, or Brave must still be installed on the target machine. Run the
 executable from the directory holding `.env`, since it reads `.env` and writes
 `logs/` relative to the working directory.
+
+The Linux build is compiled on Ubuntu against glibc, so it will not run on a
+musl-only distribution such as Alpine.
 
 ## Logs
 
@@ -160,10 +162,18 @@ table, so `--dry-run` reports `not-ready` and a real run exits 1 with
 
 ## Releases
 
-Push a `v*` tag and the `Release` workflow builds a Windows executable on a
-Windows runner and attaches a zip to the GitHub release. The zip contains
-`app.exe`, `.env.example`, `LICENSE`, and this README. It never contains a real
-`.env`.
+Push a `v*` tag and the `Release` workflow builds both targets on their own
+runner and attaches two assets to the GitHub release:
+
+| Asset                                      | Extract with     |
+| ------------------------------------------ | ---------------- |
+| `sippol-integrator-<tag>-windows-x64.zip`  | `Expand-Archive` |
+| `sippol-integrator-<tag>-linux-x64.tar.gz` | `tar -xzf`       |
+
+Each holds the executable, `.env.example`, `LICENSE`, and this README, flat, so
+the executable and your `.env` end up side by side. Neither ever contains a real
+`.env`. The Linux tarball arrives already executable; a zip would not preserve
+the executable bit, which is why it is a tarball.
 
 ## License
 

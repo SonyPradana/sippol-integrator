@@ -13,7 +13,6 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "compile": "bun build --compile --outfile dist/app src/app.ts",
-    "compile:linux": "bun build --compile --target=bun-linux-x64 --outfile dist/app src/app.ts",
     "check": "bun run fmt:check && bun run lint && bun run typecheck && bun run test && bun run compile"
   },
   "devDependencies": {

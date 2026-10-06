@@ -7,6 +7,27 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- A Linux x86-64 release asset, `sippol-integrator-<tag>-linux-x64.tar.gz`. The
+  Release workflow builds it natively on an Ubuntu runner instead of
+  cross-compiling from Windows, because a Windows build host cannot give the
+  binary a Unix executable bit — NTFS stores no Unix mode bits — and a zip would
+  not carry one either. Extract the tarball and run it; no `chmod` needed.
+- `[Unreleased]` holds what has landed on `main` but is not in a tagged release yet.
+
+### Removed
+
+- The `compile:linux` script. Nothing needed it once CI built each target on its
+  own runner, and its output was never runnable on the Windows machine that
+  produced it.
+
+### Known gaps
+
+- The Linux smoke test is `app help`, which does not open a browser, so it proves
+  the binary loads and runs but not that `Bun.WebView` drives Chrome on Linux.
+  The 35 browser tests do pass on an Ubuntu runner in `test.yml`.
+
 ## [0.2.0] - 2026-10-06
 
 Fixes the three bugs that made 0.1.0 unable to complete a run, verified against

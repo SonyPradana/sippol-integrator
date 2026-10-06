@@ -10,9 +10,20 @@ permissions:
   contents: write
 
 jobs:
-  windows:
-    name: windows asset
-    runs-on: windows-latest
+  build:
+    name: ${{ matrix.asset }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            asset: windows-x64
+            ext: zip
+            bin: .\dist\app.exe
+          - os: ubuntu-latest
+            asset: linux-x64
+            ext: tar.gz
+            bin: ./dist/app
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -23,19 +34,59 @@ jobs:
       - run: bun install --frozen-lockfile
 
       # Full check, not just compile. test.yml does not run for tags, and a tag
-      # should never be the thing that discovers the build was broken.
+      # should never be the thing that discovers the build was broken. Its last
+      # step is the compile, which is also what produces the asset here, natively
+      # for whichever runner this is. No --target needed: each runner builds for
+      # itself.
       - run: bun run check
 
-      # A bundle that cannot print its own help text is not shippable.
-      - run: .\dist\app.exe help
+      # NTFS stores no Unix mode bits, so this cannot be assumed from the compile.
+      # It goes before the smoke test on purpose, so "./dist/app help" below is
+      # itself the proof that the binary arrived executable.
+      - name: executable bit
+        if: matrix.asset == 'linux-x64'
+        run: |
+          chmod +x dist/app
+          test -x dist/app
 
-      # Flat, because the exe reads .env from its working directory, so the user
-      # must end up with app.exe and .env side by side. Never ship a real .env.
-      - name: zip
+      # A bundle that cannot print its own help text is not shippable.
+      - run: ${{ matrix.bin }} help
+
+      # Flat, because the binary reads .env from its working directory, so the
+      # user must end up with the binary and .env side by side. Never ship a real
+      # .env. tar for Linux because it is the only one of the two that carries the
+      # executable bit to the user's machine.
+      - name: package (windows)
+        if: matrix.asset == 'windows-x64'
         run: Compress-Archive -Path dist\app.exe, .env.example, LICENSE, README.md -DestinationPath "sippol-integrator-${{ github.ref_name }}-windows-x64.zip"
 
-      # gh is preinstalled on the runner, so no third-party release action is needed.
+      - name: package (linux)
+        if: matrix.asset == 'linux-x64'
+        run: tar -czf "sippol-integrator-${{ github.ref_name }}-linux-x64.tar.gz" dist/app .env.example LICENSE README.md
+
+      # Handed to the publish job, because two builds racing two gh release create
+      # calls would leave a release with one asset instead of two. If the archive
+      # step silently produced nothing, error rather than publish half a release.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asset-${{ matrix.asset }}
+          path: sippol-integrator-${{ github.ref_name }}-${{ matrix.asset }}.${{ matrix.ext }}
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: asset-*
+          merge-multiple: true
+          path: dist
+
+      # gh is preinstalled on the runner, so no third-party release action is
+      # needed. Deliberately not idempotent: re-running a failed publish finds the
+      # release already there and stops, instead of overwriting assets.
       - name: publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "${{ github.ref_name }}" "sippol-integrator-${{ github.ref_name }}-windows-x64.zip" --generate-notes
+        run: gh release create "${{ github.ref_name }}" dist/*.zip dist/*.tar.gz --generate-notes

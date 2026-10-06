@@ -155,14 +155,26 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
 ## Standalone executable
 
 - `bun run compile` produces `dist/app.exe` on Windows, `dist/app` elsewhere;
-  Bun adds the extension. `compile:linux` cross-compiles with
-  `--target=bun-linux-x64`. Both write to `dist/` without colliding.
+  Bun adds the extension. There is no `compile:linux` any more: `release.yml`
+  builds each target on its own runner, so nothing needs cross-compiling, and a
+  binary cross-compiled from Windows has no exec bit to give because NTFS stores
+  no Unix modes.
 - **`--compile` bundles Bun and the JS, not a browser.** Chrome, Chromium, Edge,
   or Brave must be installed on the target machine or `new Bun.WebView()` throws.
 - `--compile` rejects `--outdir`; it needs `--outfile`. It implies `--production`,
   and `.env` autoload defaults to on.
 - No `--minify`: the bundle is a few KB, and minified stack traces are unreadable
   without a sourcemap.
+- **`release.yml` builds two targets in one matrix, then publishes once.** The two
+  build legs must not each run `gh release create`, or they race and the release
+  ends up with one asset. Hence `upload-artifact` per leg plus a `publish` job
+  gated on `needs: build`.
+- The Linux leg's `chmod +x` runs **before** its smoke test, so `./dist/app help`
+  is itself the proof the binary arrived executable. `test -x` after it turns a
+  silent `chmod` failure into a red build.
+- Windows packaging is `Compress-Archive` in the default pwsh shell; the Linux leg
+  is `tar` in bash. They cannot share one step, which is why each is guarded by
+  `if: matrix.asset == ...` rather than branching inside a `shell: bash` step.
 
 ## Tooling
 
