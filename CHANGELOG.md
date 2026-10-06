@@ -9,12 +9,21 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- `[Unreleased]` holds what has landed on `main` but is not in a tagged release yet.
+
+## [0.3.0] - 2026-10-06
+
+First release that completes a real send against the live server. Adds the Linux
+x86-64 asset and the `--for` shorthand, drops the filter click, and fixes the two
+separate ways a send was abandoned before the server could answer.
+
+### Added
+
 - A Linux x86-64 release asset, `sippol-integrator-<tag>-linux-x64.tar.gz`. The
   Release workflow builds it natively on an Ubuntu runner instead of
   cross-compiling from Windows, because a Windows build host cannot give the
   binary a Unix executable bit — NTFS stores no Unix mode bits — and a zip would
   not carry one either. Extract the tarball and run it; no `chmod` needed.
-- `[Unreleased]` holds what has landed on `main` but is not in a tagged release yet.
 - The `--for DATE` flag, the shorthand for a single day: it sets `tanggal_awal` and
   `tanggal_akhir` together. An explicit `--from` or `--to` still wins over the side it
   names.
