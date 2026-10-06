@@ -13,7 +13,10 @@ const fixture = (name: string): string => pathToFileURL(`${import.meta.dir}/fixt
 
 const CONFIG: Config = {
   host: "http://unused.invalid",
-  loginPath: fixture("login.html"),
+  // The real login redirects, and login() waits up to LOGIN_GRACE_MS for that redirect.
+  // login.html deliberately never moves, which is the one thing the auth-rejection test
+  // needs and what otherwise bills 15s to every run() and dryRun() test in this file.
+  loginPath: fixture("login-ok.html"),
   targetPath: fixture("target.html"),
   username: "fake-user",
   password: "fake-pass",
@@ -78,7 +81,8 @@ test("auth accepts a login that moves off the login page", async () => {
 }, 30_000);
 
 test("auth rejects a login that stays on the login page", async () => {
-  const a = await authenticate(CONFIG, selectors("#fx-ok"));
+  const cfg = { ...CONFIG, loginPath: fixture("login.html") };
+  const a = await authenticate(cfg, selectors("#fx-ok"));
   expect(a.ok).toBe(false);
   expect(a.before).toBe(a.after);
 }, 30_000);

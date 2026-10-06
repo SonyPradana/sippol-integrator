@@ -28,7 +28,14 @@ bun run fmt        # oxfmt, writes
 ```
 
 `bun test` launches a real headless Chrome against `src/fixture/`. It needs
-Chrome/Edge installed and takes ~15s. Never point a test at the live site.
+Chrome/Edge installed and takes ~75s. Never point a test at the live site.
+
+Proving that a login which never redirects is rejected costs ~15s of that on its
+own, because `LOGIN_GRACE_MS` is the wait for that redirect. Keep `login.html` —
+the fixture that deliberately does not move — out of the `run()` and `dryRun()`
+configs: `CONFIG.loginPath` is `login-ok.html` precisely so the other twelve
+tests do not each pay that 15s. Pointing it back at `login.html` is what made the
+suite 235s and started timing a test out at its own 30s ceiling.
 
 ## Bun headless browser — the facts that are easy to get wrong
 
