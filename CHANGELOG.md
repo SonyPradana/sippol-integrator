@@ -7,10 +7,44 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-06
+
+Fixes the three bugs that made 0.1.0 unable to complete a run, verified against
+the live app.
+
+**Breaking:** every `.env` key is renamed with a `SIMPUS_` prefix. See Changed
+below, this is a one-time edit to the file.
+
+### Fixed
+
+- The target page renders no table, and so no send button, until its filter
+  button is clicked. `button.btnsubmit.sendAll` therefore never existed and every
+  run failed with `main button not found`. The filter is now clicked before the
+  button check.
+- A login that had succeeded was reported as `login-failed`. The wait after
+  submit polled `view.loading`, which is still false right after the click
+  because the form POST has not started, so it returned immediately and read the
+  URL while the page had not moved. It now waits for the real navigation.
+- The guard against a silent success compared URLs with `startsWith`. The target
+  path nests under the login path, so every target URL starts with the login URL
+  and the guard rejected pages that had loaded correctly.
+
+### Changed
+
+- **`.env` keys are now `SIMPUS_`-prefixed**, matching the system written to.
+  An unprefixed `USERNAME` is already set on Windows to the logged-in user, and
+  dotenv does not override a variable that is already set, so the app silently
+  read the Windows account name instead of the real one. Rename the keys in an
+  existing `.env`; the values do not change.
+
+### Behaviour worth knowing
+
 ## [0.1.0] - 2026-10-05
 
 First release. A one-shot command that logs in, opens one period's page, and
 clicks send exactly once.
+
+This release could not log in, for the reasons fixed in 0.2.0. Kept for history.
 
 ### Added
 
@@ -34,7 +68,3 @@ clicks send exactly once.
   return. The click is raced against the dialog event instead. A click that
   neither returns nor opens a dialog within 30 seconds is reported as
   `click-hung`, which means the outcome is unknown, not that nothing happened.
-- The target page renders no send button until its filter button is clicked, and
-  a range with no rows renders no table at all. `--dry-run` is the only way to
-  find out before a run; it exits non-zero when the button is not there.
-- A full run takes roughly 40 seconds, nearly all of it waiting on the server.
