@@ -24,7 +24,6 @@ const selectors = (mainButton: string): Selectors => ({
   user: "#fx-user",
   pass: "#fx-pass",
   submit: "#fx-submit",
-  filter: "#fx-filter",
   mainButton,
 });
 

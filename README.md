@@ -155,10 +155,10 @@ The session on the target app expires after roughly three minutes, so keep
 
 A run takes about 40 seconds end to end, mostly waiting on the internal server.
 
-The send button only exists once the page's filter button has been clicked, and
-only when the chosen range actually has rows. A range with no data renders no
-table, so `--dry-run` reports `not-ready` and a real run exits 1 with
-`main button not found`. Check the dry run before sending anything.
+The send button exists only when the chosen range actually has rows: the page
+renders its table server-side from the dates in the URL, so an empty range
+renders none. `--dry-run` therefore reports `not-ready` and a real run exits 1
+with `main button not found`. Check the dry run before sending anything.
 
 ## Releases
 

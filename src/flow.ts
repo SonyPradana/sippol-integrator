@@ -5,7 +5,6 @@ export type Selectors = {
   user: string;
   pass: string;
   submit: string;
-  filter: string;
   mainButton: string;
 };
 
@@ -13,7 +12,6 @@ export const DEFAULT_SELECTORS: Selectors = {
   user: "#UserUsername",
   pass: "#UserPassword",
   submit: 'input.btnLogin[type="submit"]',
-  filter: "#btnSubmitFilter",
   mainButton: "button.btnsubmit.sendAll",
 };
 
@@ -64,7 +62,7 @@ export async function run(
 
   await login(view, cfg, sel);
   const url = await openTarget(view, cfg, argv);
-  await applyFilter(view, sel);
+  await waitForTable(view, sel);
 
   const button = await buttonState(view, sel.mainButton);
   if (decideButton(button.found, button.disabled) !== "click") {
@@ -131,7 +129,7 @@ export async function dryRun(
   await using view = openView();
   await login(view, cfg, sel);
   await openTarget(view, cfg, argv);
-  await applyFilter(view, sel);
+  await waitForTable(view, sel);
 
   const page = await view.evaluate<Omit<Report, "button">>(`(() => ({
     url: location.href,
@@ -205,14 +203,13 @@ export function isSamePage(a: string, b: string): boolean {
 }
 
 /**
- * The target page renders no table, and so no send button, until its filter button is
- * clicked. Verified against the live app: with a range that has data the click produces
- * 1 .sendAll plus one .sendRegistrasi per row; with an empty range it produces neither.
- * A miss here looks exactly like "nothing to send", so the wait is bounded and the
- * buttonState check stays the authority.
+ * The page renders the table server-side from the query params, so there is nothing to
+ * submit and no filter to click. navigate() can resolve before that markup is in the DOM,
+ * so wait for the button rather than reading it the moment navigation returns. Bounded,
+ * because an empty range legitimately renders no button and has to surface as
+ * "main button not found" instead of a hang.
  */
-async function applyFilter(view: Bun.WebView, sel: Selectors): Promise<void> {
-  await view.click(sel.filter);
+async function waitForTable(view: Bun.WebView, sel: Selectors): Promise<void> {
   for (let i = 0; i < 80; i++) {
     if (await countMatches(view, sel.mainButton)) return;
     await Bun.sleep(100);

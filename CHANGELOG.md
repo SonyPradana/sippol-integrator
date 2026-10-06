@@ -22,6 +22,13 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   own runner, and its output was never runnable on the Windows machine that
   produced it.
 
+### Removed
+
+- The `Tampilkan Data` filter click. The page renders its table server-side from the dates
+  in the URL, so navigating straight to that URL is enough; the click only reloaded the
+  same URL. It had also been silently covering for `navigate()` resolving before the markup
+  was in the DOM, which `waitForTable()` now handles on its own.
+
 ### Known gaps
 
 - The Linux smoke test is `app help`, which does not open a browser, so it proves

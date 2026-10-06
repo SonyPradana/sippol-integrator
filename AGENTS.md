@@ -97,12 +97,14 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
   inputs from the `tanggal_awal` / `tanggal_akhir` query params — which is why
   `--from` / `--to` work by going through the URL. Confirmed: the dry run renders
   exactly the requested dates back into the inputs.
-- **The send button does not exist until the filter button is clicked.** On arrival
-  the page carries `btnSubmitFilter` ("Tampilkan Data"), `btnProcessBackdate`, and
-  `btnBackdateSync`, but no `.sendAll` at all. `applyFilter()` in `flow.ts` clicks
-  it and polls for the button. Verified live: a range with data then yields 1
-  `.sendAll` plus one `.sendRegistrasi` per row; a range with no data yields
-  neither, and the run correctly exits 1 on `main button not found`.
+- **The table is rendered server-side from the query params, so there is no filter
+  step.** `btnSubmitFilter` ("Tampilkan Data") does exist, but clicking it only reloads
+  the same URL. Navigating straight to that URL is enough. An earlier note here claimed
+  `.sendAll` was absent until that button was clicked; that was wrong. The probe behind it
+  had followed a URL with no params, so it saw the empty-range case and read it as the
+  filter case. `waitForTable()` only waits for markup and never clicks anything.
+- A range with rows renders exactly one `.sendAll`, which sends the whole period in one
+  click. A range with no rows renders none, and the run exits 1 on `main button not found`.
 - **The target page nests under the login path.** `LOGIN_PATH` is `/j-care/` and
   `TARGET_PATH` is `/j-care/admin-simkes`, so any string-prefix test for "am I still
   on the login page" throws on a perfectly good page. Use `isSamePage()`.

@@ -14,10 +14,8 @@
     <label for="fx-to">to</label>
     <input id="fx-to" name="tanggal_akhir" value="05-01-2030" />
 
-    <button id="fx-filter" type="button">display data</button>
-
-    <!-- The real page renders no table at all until the filter button is clicked. -->
-    <table id="fx-table" style="display: none">
+    <!-- The real page renders this table server-side from the dates in the URL. -->
+    <table id="fx-table">
       <tr>
         <th>No</th>
         <th>Label</th>
@@ -51,9 +49,15 @@
     </table>
 
     <script>
-      document.getElementById("fx-filter").addEventListener("click", function () {
-        document.getElementById("fx-table").style.display = "";
-      });
+      // Model the server render: the table is in the served HTML but is not attached
+      // when navigation resolves, which is what waitForTable waits for. Detached rather
+      // than hidden, because querySelectorAll counts hidden elements, so a display:none
+      // table would make the poll succeed on its first iteration and prove nothing.
+      // Listeners are wired only after re-attaching, because getElementById cannot see a
+      // detached node: it would return null and abort the rest of this script, leaving
+      // every button dead and every alert assertion silently failing as timed-out.
+      var table = document.getElementById("fx-table");
+      table.remove();
 
       // Mirrors the real page: disable while in flight, alert, then reload on success.
       function wire(id, reply, reload) {
@@ -76,14 +80,17 @@
         });
       }
 
-      wire("fx-ok", "fixture: accepted", true);
-      wire("fx-fail", "fixture: rejected", false);
+      setTimeout(function () {
+        document.body.appendChild(table);
+        wire("fx-ok", "fixture: accepted", true);
+        wire("fx-fail", "fixture: rejected", false);
 
-      // Alerts straight from the handler, with no setTimeout. This freezes the page's
-      // JS thread, so a naive `await view.click()` never returns.
-      document.getElementById("fx-sync").addEventListener("click", function () {
-        alert("fixture: synchronous alert");
-      });
+        // Alerts straight from the handler, with no setTimeout. This freezes the page's
+        // JS thread, so a naive `await view.click()` never returns.
+        document.getElementById("fx-sync").addEventListener("click", function () {
+          alert("fixture: synchronous alert");
+        });
+      }, 250);
     </script>
   </body>
 </html>
