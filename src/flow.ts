@@ -39,13 +39,6 @@ const NAV_GRACE_MS = 5_000;
 /** How long to wait for the login POST to redirect before calling it a failed login. */
 const LOGIN_GRACE_MS = 15_000;
 
-/**
- * A click normally returns in well under a second. If it has not returned and no dialog
- * opened, the page's JS thread is stuck on something else entirely and there is nothing
- * left to wait for.
- */
-const CLICK_TIMEOUT_MS = 30_000;
-
 type ButtonState = { found: boolean; disabled: boolean };
 
 export function decideButton(found: boolean, disabled: boolean): "missing" | "done" | "click" {
@@ -74,23 +67,37 @@ export async function run(
   const navigated = watchNavigation(view);
   const alerted = alertText(view, cfg.timeoutMs);
 
-  // A synchronous alert() blocks the page's JS thread, so view.click() never resolves.
-  // Racing the two means such a page still reports its alert instead of hanging, and a
-  // click that rejects still surfaces its own error rather than a bare timeout.
-  const clicked = view.click(sel.mainButton);
-  clicked.catch(() => {});
+  // A synchronous alert() inside the handler freezes the page's JS thread, so the evaluate
+  // below never resolves. Racing it against the dialog event means such a page still
+  // reports its alert instead of hanging, and a rejected evaluate still surfaces its own
+  // error rather than a bare timeout.
+  //
+  // The deadline is the dialog wait itself, not a second timer. A hard 30s cap used to sit
+  // here and gave up on a real send while the server was still working on it, reporting
+  // click-hung for a period that had not in fact gone out. SIMPUS_TIMEOUT_MS is the number
+  // an operator already tunes for this server, so it is the number that applies here too.
+  //
+  // Dispatched rather than clicked through view.click(), which waits on Chrome's
+  // actionability checks and has been observed to time out on this exact button while
+  // --dry-run reports it found and enabled. A plain JS handler needs no pointer.
+  let clickSettled = false;
+  const clicked = view.evaluate<void>(
+    `document.querySelector(${JSON.stringify(sel.mainButton)}).click()`,
+  );
+  clicked.then(
+    () => {
+      clickSettled = true;
+    },
+    () => {
+      clickSettled = true;
+    },
+  );
 
-  const raced = await Promise.race([
-    alerted.then((message) => ({ message, hung: false })),
-    clicked.then(() => alerted).then((message) => ({ message, hung: false })),
-    Bun.sleep(CLICK_TIMEOUT_MS).then(() => ({ message: null, hung: true })),
-  ]);
+  const message = await Promise.race([alerted, clicked.then(() => alerted)]);
 
-  if (raced.hung) {
-    return { outcome: "click-hung", url, button, alert: null, navigated: null };
-  }
-  if (raced.message === null) {
-    return { outcome: "timed-out", url, button, alert: null, navigated: null };
+  if (message === null) {
+    const outcome: Outcome = clickSettled ? "timed-out" : "click-hung";
+    return { outcome, url, button, alert: null, navigated: null };
   }
 
   await view.cdp("Page.handleJavaScriptDialog", { accept: true });
@@ -99,7 +106,7 @@ export async function run(
     outcome: hit ? "submitted" : "failed",
     url,
     button,
-    alert: raced.message,
+    alert: message,
     navigated: hit,
   };
 }

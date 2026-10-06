@@ -82,13 +82,23 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
   `message` in `event.data`, and `alertText()` in `flow.ts` resolves with it. That
   string is the page's explanation of a refusal, so `--json` surfaces it. It used
   to be discarded.
-- **A synchronous `alert()` in the click handler hangs `view.click()` forever.** The
-  click only resolves once WebContent has finished processing the event, and an open
-  dialog freezes the page's JS thread, so the await never returns and nothing in the
-  flow times it out. `run()` therefore races the click against the alert event rather
-  than awaiting it, and `src/fixture/target.html` has `#fx-sync` to cover that case.
-  The three race arms are all `{ message, hung }` on purpose: `Promise.race` over an
-  array of differently typed promises collapses the union badly and will not narrow.
+- **A synchronous `alert()` in the click handler hangs it forever.** The dispatch only
+  resolves once WebContent has finished processing the event, and an open dialog freezes
+  the page's JS thread, so the await never returns and nothing in the flow times it out.
+  `run()` therefore races the dispatch against the alert event rather than awaiting it, and
+  `src/fixture/target.html` has `#fx-sync` to cover that case. Both arms are
+  `Promise<string | null>` and narrow without a wrapper; they were wrapped in
+  `{ message, hung }` objects before only because racing differently typed promises
+  collapses the union badly.
+- **The send button is dispatched, not clicked.** `view.click()` waits on Chrome's
+  actionability checks and has been observed to time out on this button while `--dry-run`
+  reports it found and enabled. Live runs hit both halves of that: first `click-hung` at
+  30s, then a bare `timeout waiting for 'button.btnsubmit.sendAll' to be actionable`.
+  The handler is plain JS, so `run()` calls `.click()` inside `view.evaluate`. The login
+  submit still uses `view.click()` and keeps its own intermittency.
+- There is no `CLICK_TIMEOUT_MS` any more. It was a hard 30s cap that gave up on a real
+  send while the server was still working, and `SIMPUS_TIMEOUT_MS` already covers that
+  server. Whether the dispatch settled is what now splits `timed-out` from `click-hung`.
 - The page disables the send-all button while its request is in flight, and
   re-enables it on failure.
 - The page's session check redirects to the login page after about three
@@ -127,10 +137,11 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
 - `--json` replaces stdout with one object carrying `mode`, `outcome`, `ms`, and
   whatever the mode knows: `url`, `button`, `alert`, `navigated` for a send, and
   `inputs` for a dry run. The log file stays human format on purpose.
-- `click-hung` is a last-resort bucket: the click neither returned nor opened a
-  dialog within `CLICK_TIMEOUT_MS`, so the page's JS thread is stuck on something
+- `click-hung` is a last-resort bucket: no alert arrived inside `SIMPUS_TIMEOUT_MS` and
+  the dispatch never settled either, so the page's JS thread is stuck on something
   else. It is deliberately untested, because a fixture that actually freezes
-  Chrome would be the thing that hangs CI.
+  Chrome would be the thing that hangs CI. A dispatch that did come back but never
+  produced an alert is `timed-out` instead, which is what a quiet server looks like.
 - `app.ts` has exactly one `process.exit()` outside the help check. `main()`
   returns `[result, human, code]` and never throws, so JSON formatting, logging,
   and the exit code all live in one place.

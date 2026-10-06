@@ -21,13 +21,22 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - The `compile:linux` script. Nothing needed it once CI built each target on its
   own runner, and its output was never runnable on the Windows machine that
   produced it.
-
-### Removed
-
 - The `Tampilkan Data` filter click. The page renders its table server-side from the dates
   in the URL, so navigating straight to that URL is enough; the click only reloaded the
   same URL. It had also been silently covering for `navigate()` resolving before the markup
   was in the DOM, which `waitForTable()` now handles on its own.
+- The `CLICK_TIMEOUT_MS` constant and its hard 30-second cap on the click race.
+
+### Fixed
+
+- A real send was abandoned after 30 seconds and reported as `click-hung`, leaving the
+  period unsent and the outcome unknown, no matter what `SIMPUS_TIMEOUT_MS` was set to.
+  There is now no second timer: the alert wait is the deadline, and `SIMPUS_TIMEOUT_MS`
+  is the number that applies.
+- The send button failed with `timeout waiting for 'button.btnsubmit.sendAll' to be
+  actionable` while `--dry-run` reported the same button found and enabled. The dispatch
+  now runs inside `view.evaluate` instead of going through `view.click()`, which waits on
+  Chrome's actionability checks the plain JS handler does not need.
 
 ### Known gaps
 

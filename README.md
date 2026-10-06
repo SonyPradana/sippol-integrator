@@ -112,9 +112,11 @@ is the actual success signal. `mode` is `send`, `auth`, `dry-run`, or `help`. Fo
 the login was accepted. A thrown error still produces valid JSON, with
 `outcome: "error"` and an `error` field.
 
-`outcome: "click-hung"` means the click neither returned nor raised an alert
-within 30 seconds, so the page's JS thread is stuck. Treat that run as unknown:
-the data may or may not have been sent.
+`outcome: "click-hung"` means the page's JS thread is stuck: `SIMPUS_TIMEOUT_MS` ran
+out with no alert, and the dispatch never returned either. Treat that run as unknown:
+the data may or may not have been sent. `timed-out` is the milder one — the dispatch
+came back but no alert appeared, which is what a server that never responded looks
+like. A send normally finishes in well under a minute.
 
 ## Overlapping runs
 
