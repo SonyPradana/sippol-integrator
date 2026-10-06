@@ -25,6 +25,7 @@ bun run start auth
 bun run start --dry-run --from 04-10-2026 --to 04-10-2026
 bun run start
 bun run start --from 04-10-2026 --to 04-10-2026
+bun run start --for 04-10-2026
 ```
 
 `app auth` logs in and reports `authenticated` or `login-failed`, then stops. It
@@ -44,6 +45,9 @@ would click.
 `tanggal_akhir` on the target URL, which the server renders into the page's date
 inputs. The page rejects a range wider than 30 days.
 
+`--for DATE` is the shorthand for a single day: it sets both dates at once. An
+explicit `--from` or `--to` still wins over the side it names.
+
 Output is `submitted`, `already-done`, `failed`, `timed-out`, or `click-hung`,
 prefixed with an ISO timestamp and the elapsed seconds. `auth` reports
 `authenticated` or `login-failed` instead. Exit code is 0 for `submitted`,
@@ -57,6 +61,7 @@ Run these in order. The first two write nothing.
 bun run start auth                                          # credentials work?
 bun run start --dry-run --from DD-MM-YYYY --to DD-MM-YYYY    # dates and selectors
 bun run start --from DD-MM-YYYY --to DD-MM-YYYY              # the real one
+bun run start --for DD-MM-YYYY                               # a single day instead
 ```
 
 Check the dry-run output before the last step: the `tanggal_awal` and

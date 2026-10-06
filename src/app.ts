@@ -10,6 +10,7 @@ const HELP = `sippol-integrator - sends a SIMKES period through a headless brows
 Usage
   app                  send with no date range
   app --from D --to D  send one period
+  app --for D          send a single day
   app auth             log in only and report whether it worked, sends nothing
   app --dry-run        reach the target, print what the server rendered, sends nothing
   app help             this text
@@ -17,9 +18,11 @@ Usage
 Flags
   --from DATE   becomes tanggal_awal   (DD-MM-YYYY)
   --to   DATE   becomes tanggal_akhir   (DD-MM-YYYY)
-  --dry-run     read only, combines with --from and --to
+  --for  DATE   both dates at once, one single day
+  --dry-run     read only, combines with --for, --from and --to
   --json        machine-readable result on stdout, log file stays human
-  Both dates are optional and independent. The page rejects ranges over 30 days.
+  Dates are optional and independent. --from and --to each override the side
+  they name if --for was given too. The page rejects ranges over 30 days.
 
 Environment (.env in the working directory)
   SIMPUS_HOST          origin, no trailing slash
@@ -47,7 +50,7 @@ Examples
   app auth
   app --dry-run --from 04-10-2026 --to 04-10-2026
   app --from 04-10-2026 --to 04-10-2026
-  app --from 04-10-2026 --to 04-10-2026 --json
+  app --for 04-10-2026 --json
   app help
 
 Run from the directory holding .env. Every run appends one line to

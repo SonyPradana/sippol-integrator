@@ -15,6 +15,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   binary a Unix executable bit — NTFS stores no Unix mode bits — and a zip would
   not carry one either. Extract the tarball and run it; no `chmod` needed.
 - `[Unreleased]` holds what has landed on `main` but is not in a tagged release yet.
+- The `--for DATE` flag, the shorthand for a single day: it sets `tanggal_awal` and
+  `tanggal_akhir` together. An explicit `--from` or `--to` still wins over the side it
+  names.
 
 ### Removed
 
