@@ -77,6 +77,14 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      # gh needs a git repo to resolve the tag and to draft notes against the
+      # previous one, and the workspace starts empty otherwise. Full history so
+      # --generate-notes can compare v0.2.0 → v0.3.0.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
       - uses: actions/download-artifact@v4
         with:
           pattern: asset-*
