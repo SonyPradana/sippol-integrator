@@ -22,12 +22,12 @@ Flags
   Both dates are optional and independent. The page rejects ranges over 30 days.
 
 Environment (.env in the working directory)
-  HOST          origin, no trailing slash
-  LOGIN_PATH    login page path
-  TARGET_PATH   target page path
-  USERNAME
-  PASSWORD
-  TIMEOUT_MS    alert wait, default 120000
+  SIMPUS_HOST          origin, no trailing slash
+  SIMPUS_LOGIN_PATH    login page path
+  SIMPUS_TARGET_PATH   target page path
+  SIMPUS_USERNAME
+  SIMPUS_PASSWORD
+  SIMPUS_TIMEOUT_MS    alert wait, default 120000
 
 Output
   submitted     the page reloaded, so the period was sent

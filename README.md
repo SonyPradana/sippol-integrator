@@ -11,7 +11,7 @@ no browser download.
 
 ```bash
 bun install
-cp .env.example .env   # then fill in USERNAME and PASSWORD
+cp .env.example .env   # then fill in SIMPUS_USERNAME and SIMPUS_PASSWORD
 ```
 
 Requires Chrome, Chromium, Edge, or Brave installed. Bun finds it
@@ -149,7 +149,7 @@ touch the live site.
 ## Notes
 
 The session on the target app expires after roughly three minutes, so keep
-`TIMEOUT_MS` under that.
+`SIMPUS_TIMEOUT_MS` under that.
 
 ## Releases
 

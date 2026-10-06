@@ -5,6 +5,7 @@ export type Selectors = {
   user: string;
   pass: string;
   submit: string;
+  filter: string;
   mainButton: string;
 };
 
@@ -12,6 +13,7 @@ export const DEFAULT_SELECTORS: Selectors = {
   user: "#UserUsername",
   pass: "#UserPassword",
   submit: 'input.btnLogin[type="submit"]',
+  filter: "#btnSubmitFilter",
   mainButton: "button.btnsubmit.sendAll",
 };
 
@@ -36,6 +38,9 @@ export type Auth = { before: string; after: string; ok: boolean };
 /** The page reloads itself on success, so a navigation after the alert is the success signal. */
 const NAV_GRACE_MS = 5_000;
 
+/** How long to wait for the login POST to redirect before calling it a failed login. */
+const LOGIN_GRACE_MS = 15_000;
+
 /**
  * A click normally returns in well under a second. If it has not returned and no dialog
  * opened, the page's JS thread is stuck on something else entirely and there is nothing
@@ -59,6 +64,7 @@ export async function run(
 
   await login(view, cfg, sel);
   const url = await openTarget(view, cfg, argv);
+  await applyFilter(view, sel);
 
   const button = await buttonState(view, sel.mainButton);
   if (decideButton(button.found, button.disabled) !== "click") {
@@ -110,7 +116,7 @@ export async function authenticate(cfg: Config, sel: Selectors = DEFAULT_SELECTO
   await using view = openView();
   const before = await login(view, cfg, sel);
   const after = await view.evaluate<string>("location.href");
-  return { before, after, ok: after !== before };
+  return { before, after, ok: !isSamePage(after, before) };
 }
 
 /**
@@ -125,6 +131,7 @@ export async function dryRun(
   await using view = openView();
   await login(view, cfg, sel);
   await openTarget(view, cfg, argv);
+  await applyFilter(view, sel);
 
   const page = await view.evaluate<Omit<Report, "button">>(`(() => ({
     url: location.href,
@@ -158,8 +165,15 @@ async function login(view: Bun.WebView, cfg: Config, sel: Selectors): Promise<st
   await view.type(cfg.username);
   await view.click(sel.pass);
   await view.type(cfg.password);
+
+  // Waiting on view.loading is not good enough here: right after the click the POST has
+  // not started yet, so the flag is still false and the wait returns immediately, which
+  // reads location.href while the page has not moved. Waiting for the real navigation
+  // is the only signal that the credentials were accepted.
+  const navigated = watchNavigation(view);
   await view.click(sel.submit);
-  await idle(view);
+  await navigated(LOGIN_GRACE_MS);
+
   return url;
 }
 
@@ -170,16 +184,43 @@ function targetUrl(cfg: Config, argv: string[]): string {
   return url.href;
 }
 
-async function idle(view: Bun.WebView): Promise<void> {
-  for (let i = 0; i < 100 && view.loading; i++) await Bun.sleep(100);
-}
-
 /** Guards against the silent-success bug: an unauthenticated request lands back on the login page. */
 async function assertAuthenticated(view: Bun.WebView, cfg: Config): Promise<void> {
   const here = await view.evaluate<string>("location.href");
-  if (here.startsWith(new URL(cfg.loginPath, cfg.host).href)) {
+  if (isSamePage(here, new URL(cfg.loginPath, cfg.host).href)) {
     throw new Error(`login failed: redirected back to ${here}`);
   }
+}
+
+/**
+ * Compares origin and path, never a raw string prefix. The real app's LOGIN_PATH is
+ * "/j-care/" and its TARGET_PATH is "/j-care/admin-simkes", so every target URL starts with
+ * the login URL and a prefix test would throw on a page that loaded perfectly well.
+ */
+export function isSamePage(a: string, b: string): boolean {
+  const ua = new URL(a);
+  const ub = new URL(b);
+  const path = (p: string): string => (p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p);
+  return ua.origin === ub.origin && path(ua.pathname) === path(ub.pathname);
+}
+
+/**
+ * The target page renders no table, and so no send button, until its filter button is
+ * clicked. Verified against the live app: with a range that has data the click produces
+ * 1 .sendAll plus one .sendRegistrasi per row; with an empty range it produces neither.
+ * A miss here looks exactly like "nothing to send", so the wait is bounded and the
+ * buttonState check stays the authority.
+ */
+async function applyFilter(view: Bun.WebView, sel: Selectors): Promise<void> {
+  await view.click(sel.filter);
+  for (let i = 0; i < 80; i++) {
+    if (await countMatches(view, sel.mainButton)) return;
+    await Bun.sleep(100);
+  }
+}
+
+function countMatches(view: Bun.WebView, selector: string): Promise<number> {
+  return view.evaluate<number>(`document.querySelectorAll(${JSON.stringify(selector)}).length`);
 }
 
 function buttonState(view: Bun.WebView, selector: string): Promise<ButtonState> {

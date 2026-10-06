@@ -101,7 +101,7 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
 
 - `src/app.ts` is the entrypoint. **`help` / `--help` / `-h` is checked before
   `loadConfig()`**, so it works on a machine with no `.env`. Moving it after the
-  config load turns `app help` into a "missing PASSWORD" error.
+  config load turns `app help` into a "missing SIMPUS_PASSWORD" error.
 - `app auth` is the read-only pre-flight: it logs in and reports whether the
   browser moved off the login page, then stops. It never opens the target page and
   takes no lock. Use it before any real run — it is the only check that isolates bad
@@ -169,8 +169,29 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
 
 ## Environment
 
-- **Not a git repository** — `git status` fails. `git init` was deliberately
-  deferred until after the barebone landed. `.github/workflows/ci.yml` is written
-  but has never run.
+- **Every `.env` key is prefixed with `SIMPUS_`. This is not cosmetic.** Windows
+  already defines `USERNAME` as the logged-in user, and Bun's dotload does **not**
+  override a variable that is already set. With a bare `USERNAME` key the app read
+  the Windows account name instead of the real one and reported `login-failed`
+  four times in a row against correct credentials, while the very same credentials
+  worked over a plain HTTP POST. Any new key must carry the prefix too.
+- Dotenv precedence is the other half of that trap: a real environment variable
+  beats `.env`. That is what makes `SIMPUS_*` overridable from the shell, and what
+  made the unprefixed version silently wrong. `src/config.test.ts` pins it.
+- **Login is judged by URL, never by the login field.** See the Target app section.
 - `.env` holds real credentials and is gitignored. `.env.example` is the shape.
+- The host is an internal RFC1918 address and is deliberately replaced with
+  `HOST` / `TARGET-PATH` placeholders in every committed file.
+- The real page also ships `jquery.watermark.min.js` and registers a Service
+  Worker, neither of which turned out to break the submit. `view.click` can still
+  time out with "not actionable" intermittently on the login page, because it
+  loads a dozen jQuery files from a slow link.
+- The real login form posts to `/j-care/` with `_method=POST` and
+  `data[User][username]`, `data[User][password]`, and redirects to `/j-care/home`
+  on success. There is a second guest form on the same page with the same field
+  names, so match on ids, not names.
+- It is a CakePHP app. `/j-care/js/...` and the `data[_Token]` convention mean the
+  login page may gain a CSRF field; if login starts failing again, dump the form
+  before touching `src/flow.ts`.
 - CI does not run the automation; it needs the internal network and credentials.
+  `.github/workflows/test.yml` and `release.yml` have never run.

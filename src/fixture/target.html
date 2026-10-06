@@ -14,7 +14,10 @@
     <label for="fx-to">to</label>
     <input id="fx-to" name="tanggal_akhir" value="05-01-2030" />
 
-    <table>
+    <button id="fx-filter" type="button">display data</button>
+
+    <!-- The real page renders no table at all until the filter button is clicked. -->
+    <table id="fx-table" style="display: none">
       <tr>
         <th>No</th>
         <th>Label</th>
@@ -48,6 +51,10 @@
     </table>
 
     <script>
+      document.getElementById("fx-filter").addEventListener("click", function () {
+        document.getElementById("fx-table").style.display = "";
+      });
+
       // Mirrors the real page: disable while in flight, alert, then reload on success.
       function wire(id, reply, reload) {
         var button = document.getElementById(id);

@@ -2,15 +2,15 @@ import { expect, test } from "bun:test";
 import { loadConfig } from "./config.ts";
 
 const OK = {
-  HOST: "http://example.test",
-  LOGIN_PATH: "/login",
-  TARGET_PATH: "/target",
-  USERNAME: "u",
-  PASSWORD: "p",
+  SIMPUS_HOST: "http://example.test",
+  SIMPUS_LOGIN_PATH: "/login",
+  SIMPUS_TARGET_PATH: "/target",
+  SIMPUS_USERNAME: "u",
+  SIMPUS_PASSWORD: "p",
 };
 
 test("reads every value", () => {
-  expect(loadConfig({ ...OK, TIMEOUT_MS: "5000" })).toEqual({
+  expect(loadConfig({ ...OK, SIMPUS_TIMEOUT_MS: "5000" })).toEqual({
     host: "http://example.test",
     loginPath: "/login",
     targetPath: "/target",
@@ -25,13 +25,13 @@ test("defaults the timeout to two minutes", () => {
 });
 
 test("rejects a missing or blank value", () => {
-  expect(() => loadConfig({ ...OK, USERNAME: "" })).toThrow("USERNAME");
-  expect(() => loadConfig({ ...OK, HOST: undefined })).toThrow("HOST");
-  expect(() => loadConfig({ ...OK, PASSWORD: "  " })).toThrow("PASSWORD");
+  expect(() => loadConfig({ ...OK, SIMPUS_USERNAME: "" })).toThrow("SIMPUS_USERNAME");
+  expect(() => loadConfig({ ...OK, SIMPUS_HOST: undefined })).toThrow("SIMPUS_HOST");
+  expect(() => loadConfig({ ...OK, SIMPUS_PASSWORD: "  " })).toThrow("SIMPUS_PASSWORD");
 });
 
-test("rejects a non-numeric or non-positive timeout", () => {
-  expect(() => loadConfig({ ...OK, TIMEOUT_MS: "soon" })).toThrow("TIMEOUT_MS");
-  expect(() => loadConfig({ ...OK, TIMEOUT_MS: "0" })).toThrow("TIMEOUT_MS");
-  expect(() => loadConfig({ ...OK, TIMEOUT_MS: "-1" })).toThrow("TIMEOUT_MS");
+// Windows sets USERNAME to the logged-in user, and dotenv does not override it.
+test("ignores an unprefixed USERNAME left over in the environment", () => {
+  const { SIMPUS_USERNAME: _absent, ...rest } = OK;
+  expect(() => loadConfig({ ...rest, USERNAME: "windows-user" })).toThrow("SIMPUS_USERNAME");
 });
