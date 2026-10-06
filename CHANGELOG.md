@@ -34,3 +34,7 @@ clicks send exactly once.
   return. The click is raced against the dialog event instead. A click that
   neither returns nor opens a dialog within 30 seconds is reported as
   `click-hung`, which means the outcome is unknown, not that nothing happened.
+- The target page renders no send button until its filter button is clicked, and
+  a range with no rows renders no table at all. `--dry-run` is the only way to
+  find out before a run; it exits non-zero when the button is not there.
+- A full run takes roughly 40 seconds, nearly all of it waiting on the server.

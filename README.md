@@ -151,6 +151,13 @@ touch the live site.
 The session on the target app expires after roughly three minutes, so keep
 `SIMPUS_TIMEOUT_MS` under that.
 
+A run takes about 40 seconds end to end, mostly waiting on the internal server.
+
+The send button only exists once the page's filter button has been clicked, and
+only when the chosen range actually has rows. A range with no data renders no
+table, so `--dry-run` reports `not-ready` and a real run exits 1 with
+`main button not found`. Check the dry run before sending anything.
+
 ## Releases
 
 Push a `v*` tag and the `Release` workflow builds a Windows executable on a

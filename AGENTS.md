@@ -95,7 +95,19 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
   minutes, so keep total runtime under that.
 - The click reads the date inputs, not the URL, but the server populates those
   inputs from the `tanggal_awal` / `tanggal_akhir` query params — which is why
-  `--from` / `--to` work by going through the URL.
+  `--from` / `--to` work by going through the URL. Confirmed: the dry run renders
+  exactly the requested dates back into the inputs.
+- **The send button does not exist until the filter button is clicked.** On arrival
+  the page carries `btnSubmitFilter` ("Tampilkan Data"), `btnProcessBackdate`, and
+  `btnBackdateSync`, but no `.sendAll` at all. `applyFilter()` in `flow.ts` clicks
+  it and polls for the button. Verified live: a range with data then yields 1
+  `.sendAll` plus one `.sendRegistrasi` per row; a range with no data yields
+  neither, and the run correctly exits 1 on `main button not found`.
+- **The target page nests under the login path.** `LOGIN_PATH` is `/j-care/` and
+  `TARGET_PATH` is `/j-care/admin-simkes`, so any string-prefix test for "am I still
+  on the login page" throws on a perfectly good page. Use `isSamePage()`.
+- `btnProcessBackdate` carries the bare `btnsubmit` class, so `button.btnsubmit`
+  on its own still matches more than the send button.
 
 ## Entry point, lock, and logs
 
