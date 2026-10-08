@@ -41,3 +41,25 @@ test("a trailing --for with no value is ignored", () => {
   expect(queryFrom(["--for"])).toBe("");
   expect(queryFrom(["--for", "--from", "05-10-2026"])).toBe("tanggal_awal=05-10-2026");
 });
+
+test("--for-month fills the running month", () => {
+  expect(queryFrom(["--for-month"], new Date(2026, 9, 15))).toBe(
+    "tanggal_awal=01-10-2026&tanggal_akhir=31-10-2026",
+  );
+});
+
+test("--for-month ends on the last day of a leap February", () => {
+  expect(queryFrom(["--for-month"], new Date(2028, 1, 3))).toBe(
+    "tanggal_awal=01-02-2028&tanggal_akhir=29-02-2028",
+  );
+});
+
+test("--for and --from/--to override --for-month", () => {
+  const now = new Date(2026, 9, 7);
+  expect(queryFrom(["--for-month", "--for", "05-10-2026"], now)).toBe(
+    "tanggal_awal=05-10-2026&tanggal_akhir=05-10-2026",
+  );
+  expect(queryFrom(["--for-month", "--to", "05-10-2026"], now)).toBe(
+    "tanggal_awal=01-10-2026&tanggal_akhir=05-10-2026",
+  );
+});

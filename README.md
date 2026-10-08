@@ -26,6 +26,7 @@ bun run start --dry-run --from 04-10-2026 --to 04-10-2026
 bun run start
 bun run start --from 04-10-2026 --to 04-10-2026
 bun run start --for 04-10-2026
+bun run start --for-month
 ```
 
 `app auth` logs in and reports `authenticated` or `login-failed`, then stops. It
@@ -47,6 +48,10 @@ inputs. The page rejects a range wider than 30 days.
 
 `--for DATE` is the shorthand for a single day: it sets both dates at once. An
 explicit `--from` or `--to` still wins over the side it names.
+
+`--for-month` sets both ends of the running month, day 1 to its last day,
+taken from the local clock. An explicit `--from` or `--to` still wins over the
+side it names.
 
 Output is `submitted`, `already-done`, `failed`, `timed-out`, or `click-hung`,
 prefixed with an ISO timestamp and the elapsed seconds. `auth` reports

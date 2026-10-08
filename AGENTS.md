@@ -23,6 +23,7 @@ dev tooling.
 bun run check      # fmt:check -> lint -> typecheck -> test -> compile. Run this before you finish.
 bun run start      # the automation. Needs .env filled in.
 bun run start --from 04-10-2026 --to 04-10-2026
+bun run start --for-month
 bun run compile    # standalone executable for this platform
 bun run fmt        # oxfmt, writes
 ```

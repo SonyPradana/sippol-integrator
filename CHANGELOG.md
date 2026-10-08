@@ -10,6 +10,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 - `[Unreleased]` holds what has landed on `main` but is not in a tagged release yet.
+- The `--for-month` flag: it sets `tanggal_awal` to day 1 and `tanggal_akhir` to the
+  last day of the running month, read from the local clock. An explicit `--from` or
+  `--to` still wins over the side it names.
 
 ### Changed
 
