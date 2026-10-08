@@ -165,9 +165,11 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
 - `Bun.file().delete()` throws ENOENT on a missing file, unlike
   `rm(path, { force: true })`. In a `finally`, that would replace the body's own
   error with an unlink error, so `lock.ts` uses `rm`.
-- `log.ts` appends to `logs/YYYY-MM-DD.log`, one file per **UTC** day to match
-  the ISO timestamps. Bun has no append mode, hence `appendFile`. It is one
-  exported function because `app.ts` builds the human string itself.
+- `log.ts` appends to `logs/YYYY-MM-DD.log`, one file per **local** day, and
+  `stamp()` renders timestamps in local time as ISO 8601 with the system's UTC
+  offset (`2026-10-07T14:03:00.123+07:00`), so the file name and every line
+  agree with the machine's clock — not UTC. Bun has no append mode, hence
+  `appendFile`.
 - The executable reads `.env` and writes `logs/` and `sippol.lock` relative to the
   **working directory**, so it must be launched from the directory holding
   `.env`. This bites under Task Scheduler, where "Start in" defaults elsewhere.

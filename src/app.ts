@@ -1,7 +1,7 @@
 import { loadConfig } from "./config.ts";
 import { authenticate, dryRun, run } from "./flow.ts";
 import { withLock } from "./lock.ts";
-import { append } from "./log.ts";
+import { append, stamp } from "./log.ts";
 
 type Result = Record<string, unknown>;
 
@@ -60,7 +60,6 @@ installed.`;
 
 async function main(args: string[]): Promise<[Result, string, number]> {
   const started = Date.now();
-  const stamp = (): string => new Date().toISOString();
   const secs = (): string => ((Date.now() - started) / 1000).toFixed(1);
   const mode = args.includes("auth") ? "auth" : args.includes("--dry-run") ? "dry-run" : "send";
 

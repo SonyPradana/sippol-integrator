@@ -11,6 +11,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `[Unreleased]` holds what has landed on `main` but is not in a tagged release yet.
 
+### Changed
+
+- Log file names and log timestamps use the machine's local time instead of UTC.
+  `stamp()` renders ISO 8601 with the system's UTC offset, so a line and its file
+  name both agree with the clock the run happened under.
+
 ## [0.3.0] - 2026-10-06
 
 First release that completes a real send against the live server. Adds the Linux

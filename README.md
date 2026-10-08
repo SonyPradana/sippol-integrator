@@ -84,7 +84,9 @@ musl-only distribution such as Alpine.
 
 ## Logs
 
-Every run appends one line to `logs/YYYY-MM-DD.log`, one file per UTC day. The
+Every run appends one line to `logs/YYYY-MM-DD.log`, one file per local day,
+and every timestamp is the local wall clock with the system's UTC offset, so a
+log always agrees with the machine that ran it. The
 same line goes to stdout, or stderr for a thrown error. An error line records
 the message only, not the stack.
 
@@ -101,7 +103,7 @@ bun run start --json --from 04-10-2026 --to 04-10-2026
 ```json
 {
   "mode": "send",
-  "at": "2026-10-05T14:28:57.350Z",
+  "at": "2026-10-05T14:28:57.350+07:00",
   "ms": 2742,
   "outcome": "submitted",
   "url": "http://HOST/TARGET-PATH?tanggal_awal=04-10-2026&tanggal_akhir=04-10-2026",
