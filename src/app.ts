@@ -1,4 +1,5 @@
 import { loadConfig } from "./config.ts";
+import { daemon } from "./daemon.ts";
 import { authenticate, dryRun, run } from "./flow.ts";
 import { withLock } from "./lock.ts";
 import { append, stamp } from "./log.ts";
@@ -12,6 +13,7 @@ Usage
   app --from D --to D  send one period
   app --for D          send a single day
   app --for-month      send the running month
+  app --daemon         watch the target, send whenever the button enables
   app auth             log in only and report whether it worked, sends nothing
   app --dry-run        reach the target, print what the server rendered, sends nothing
   app help             this text
@@ -22,6 +24,10 @@ Flags
   --for  DATE   both dates at once, one single day
   --for-month   both ends of the running month, day 1 to its last day
   --dry-run     read only, combines with --for, --for-month, --from and --to
+  --daemon      long-running watch, one crawl per --interval, sends when enabled
+  --interval N  minutes between crawls, counted from the previous crawl's end
+                (default 15, 1-60)
+  --max-empty N stop after this many empty crawls in a row (default 5, 1-20)
   --json        machine-readable result on stdout, log file stays human
   Dates are optional and independent. --from and --to each override the side
   they name if --for or --for-month was given too. The page rejects ranges
@@ -55,6 +61,8 @@ Examples
   app --from 04-10-2026 --to 04-10-2026
   app --for 04-10-2026 --json
   app --for-month
+  app --daemon --for-month
+  app --daemon --dry-run --interval 5
   app help
 
 Run from the directory holding .env. Every run appends one line to
@@ -136,6 +144,20 @@ const json = args.includes("--json");
 if (args.some((a) => a === "help" || a === "--help" || a === "-h")) {
   console.log(json ? JSON.stringify({ mode: "help", text: HELP }) : HELP);
   process.exit(0);
+}
+
+// Before main(), so a daemon never falls through to the one-shot send path.
+if (args.includes("--daemon") || args.includes("daemon")) {
+  try {
+    await daemon(loadConfig(process.env), args);
+    process.exit(0);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    const line = `${stamp()} error ${error}`;
+    console.error(line);
+    await append(line);
+    process.exit(1);
+  }
 }
 
 const [result, human, code] = await main(args);

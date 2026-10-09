@@ -27,6 +27,7 @@ bun run start
 bun run start --from 04-10-2026 --to 04-10-2026
 bun run start --for 04-10-2026
 bun run start --for-month
+bun run start --daemon --for-month
 ```
 
 `app auth` logs in and reports `authenticated` or `login-failed`, then stops. It
@@ -52,6 +53,12 @@ explicit `--from` or `--to` still wins over the side it names.
 `--for-month` sets both ends of the running month, day 1 to its last day,
 taken from the local clock. An explicit `--from` or `--to` still wins over the
 side it names.
+
+`--daemon` keeps one browser tab open and crawls the target every `--interval`
+minutes (default 15, counted from the previous crawl's end), sending the moment
+the button enables. Each crawl logs its time, the table's last row number, and
+the outcome. It stops on Ctrl+C or after `--max-empty` empty crawls in a row
+(default 5). `--daemon --dry-run` only watches and never sends.
 
 Output is `submitted`, `already-done`, `failed`, `timed-out`, or `click-hung`,
 prefixed with an ISO timestamp and the elapsed seconds. `auth` reports

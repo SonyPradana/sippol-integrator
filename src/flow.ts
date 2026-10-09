@@ -34,12 +34,12 @@ export type Report = {
 export type Auth = { before: string; after: string; ok: boolean };
 
 /** The page reloads itself on success, so a navigation after the alert is the success signal. */
-const NAV_GRACE_MS = 5_000;
+export const NAV_GRACE_MS = 5_000;
 
 /** How long to wait for the login POST to redirect before calling it a failed login. */
 const LOGIN_GRACE_MS = 15_000;
 
-type ButtonState = { found: boolean; disabled: boolean };
+export type ButtonState = { found: boolean; disabled: boolean };
 
 export function decideButton(found: boolean, disabled: boolean): "missing" | "done" | "click" {
   if (!found) return "missing";
@@ -153,14 +153,14 @@ function openView(): Bun.WebView {
   return new Bun.WebView({ backend: { type: "chrome", url: false } });
 }
 
-async function openTarget(view: Bun.WebView, cfg: Config, argv: string[]): Promise<string> {
+export async function openTarget(view: Bun.WebView, cfg: Config, argv: string[]): Promise<string> {
   const url = targetUrl(cfg, argv);
   await view.navigate(url);
   await assertAuthenticated(view, cfg);
   return url;
 }
 
-async function login(view: Bun.WebView, cfg: Config, sel: Selectors): Promise<string> {
+export async function login(view: Bun.WebView, cfg: Config, sel: Selectors): Promise<string> {
   const url = new URL(cfg.loginPath, cfg.host).href;
   await view.navigate(url);
   // Required before Chrome will emit javascriptDialogOpening events.
@@ -182,7 +182,7 @@ async function login(view: Bun.WebView, cfg: Config, sel: Selectors): Promise<st
   return url;
 }
 
-function targetUrl(cfg: Config, argv: string[]): string {
+export function targetUrl(cfg: Config, argv: string[]): string {
   const url = new URL(cfg.targetPath, cfg.host);
   const query = queryFrom(argv);
   if (query) url.search = query;
@@ -216,7 +216,7 @@ export function isSamePage(a: string, b: string): boolean {
  * because an empty range legitimately renders no button and has to surface as
  * "main button not found" instead of a hang.
  */
-async function waitForTable(view: Bun.WebView, sel: Selectors): Promise<void> {
+export async function waitForTable(view: Bun.WebView, sel: Selectors): Promise<void> {
   for (let i = 0; i < 80; i++) {
     if (await countMatches(view, sel.mainButton)) return;
     await Bun.sleep(100);
@@ -227,7 +227,7 @@ function countMatches(view: Bun.WebView, selector: string): Promise<number> {
   return view.evaluate<number>(`document.querySelectorAll(${JSON.stringify(selector)}).length`);
 }
 
-function buttonState(view: Bun.WebView, selector: string): Promise<ButtonState> {
+export function buttonState(view: Bun.WebView, selector: string): Promise<ButtonState> {
   return view.evaluate<ButtonState>(`(() => {
     const el = document.querySelector(${JSON.stringify(selector)});
     if (!el) return { found: false, disabled: false };
@@ -238,7 +238,7 @@ function buttonState(view: Bun.WebView, selector: string): Promise<ButtonState> 
 }
 
 /** Resolves to the dialog's own text, which is the page's explanation of a refusal. */
-function alertText(view: Bun.WebView, ms: number): Promise<string | null> {
+export function alertText(view: Bun.WebView, ms: number): Promise<string | null> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve(null), ms);
     view.addEventListener<{ message: string }>(
@@ -252,7 +252,7 @@ function alertText(view: Bun.WebView, ms: number): Promise<string | null> {
   });
 }
 
-function watchNavigation(view: Bun.WebView): (ms: number) => Promise<boolean> {
+export function watchNavigation(view: Bun.WebView): (ms: number) => Promise<boolean> {
   let hit = false;
   const seen = new Promise<void>((resolve) => {
     view.onNavigated = () => {

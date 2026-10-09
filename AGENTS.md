@@ -4,12 +4,15 @@
 
 **Short and direct beats long and clever.** The owner explicitly values this.
 
+- I prefer stupid simple code instead of smart one
+- No need to create fallback and backward compatibility unless user asking to do so
 - No speculative abstraction layers, interfaces, or config for cases that cannot happen.
 - No defensive branches, try/catch, or validation for inputs you control.
 - No comments restating the code. Comment only a non-obvious _why_.
 - If a branch, helper, or config option is not needed, delete it. Adding is not free.
 - Prefer a `throw` over a silent default. Silent fallbacks have already caused one
   real bug here (see "silent success" below).
+- Design reviews follow `docs/DESIGN_THINKING.md` (§1–§10) when asked.
 
 ## Current state
 
@@ -150,10 +153,17 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
   else. It is deliberately untested, because a fixture that actually freezes
   Chrome would be the thing that hangs CI. A dispatch that did come back but never
   produced an alert is `timed-out` instead, which is what a quiet server looks like.
-- `app.ts` has exactly one `process.exit()` outside the help check. `main()`
-  returns `[result, human, code]` and never throws, so JSON formatting, logging,
-  and the exit code all live in one place.
+- `app.ts` has exactly one `process.exit()` outside the help check and the
+  `--daemon` branch. `main()` returns `[result, human, code]` and never throws,
+  so JSON formatting, logging, and the exit code all live in one place.
 - Neither `auth` nor `--dry-run` takes the lock, because neither can send.
+  `--daemon` is the exception: it holds `sippol.lock` for the whole loop.
+- `--daemon` is the long-running watch in `src/daemon.ts`: one `Bun.WebView` for
+  the whole loop, one crawl per `--interval` minutes counted from the previous
+  crawl's end, send the moment the button enables. It stops on Ctrl+C or after
+  `--max-empty` empty crawls in a row, and logs back in (up to 3 failing crawls
+  in a row) when the session bounces to the login page. `--dry-run` makes it a
+  monitor that never sends and never counts an enabled button as empty.
 - "authenticated" means the browser moved off the login URL, not that a session token
   was issued. The target page can still bounce back to the login page later, which is
   what `assertAuthenticated` guards.

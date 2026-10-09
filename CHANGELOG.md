@@ -13,6 +13,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - The `--for-month` flag: it sets `tanggal_awal` to day 1 and `tanggal_akhir` to the
   last day of the running month, read from the local clock. An explicit `--from` or
   `--to` still wins over the side it names.
+- The `--daemon` mode: it keeps one browser tab open and crawls the target every
+  `--interval` minutes (default 15, counted from the previous crawl's end),
+  sending the moment the button enables. Each crawl logs its time, the table's
+  last row number, and the outcome. It stops on Ctrl+C or after `--max-empty`
+  empty crawls in a row (default 5); `--dry-run` turns it into a monitor that
+  never sends.
 
 ### Changed
 
