@@ -160,8 +160,12 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
 - `app.ts` has exactly one `process.exit()` outside the help check and the
   `--daemon` branch. `main()` returns `[result, human, code]` and never throws,
   so JSON formatting, logging, and the exit code all live in one place.
-- Neither `auth` nor `--dry-run` takes the lock, because neither can send.
-  `--daemon` is the exception: it holds `sippol.lock` for the whole loop.
+- Neither `auth`, `ping`, nor `--dry-run` takes the lock, because none of them
+  can send. `--daemon` is the exception: it holds `sippol.lock` for the whole loop.
+- `app ping` (`src/ping.ts`) is the cheapest pre-flight: one HEAD at the login
+  page, no browser. Any HTTP status is `reachable`; only a network error within
+  15s is `unreachable`. Run it before `auth` — it isolates a dead server from
+  every credential and selector failure.
 - `--daemon` is the long-running watch in `src/daemon.ts`: one `Bun.WebView` for
   the whole loop, one crawl per `--interval` minutes counted from the previous
   crawl's end, send the moment the button enables. It stops on Ctrl+C or after

@@ -28,6 +28,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   spawn mode, so a run never attaches to a stray Chrome.
 - A `linux-arm64` release leg, built natively on an ARM runner. Unproven until
   the first tag push runs it — same as every other workflow here has ever been.
+- `app ping`, a read-only pre-flight that sends one HEAD at the login page and
+  reports `reachable` or `unreachable` with the status code, the round-trip
+  latency, and the server header. Any HTTP status counts as alive; only a
+  network error within 15 seconds is unreachable. No browser, no lock.
 
 ### Changed
 

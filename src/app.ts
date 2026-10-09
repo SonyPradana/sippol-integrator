@@ -1,6 +1,7 @@
 import { applyEnvFile, loadConfig } from "./config.ts";
 import { daemon } from "./daemon.ts";
 import { authenticate, dryRun, run } from "./flow.ts";
+import { ping } from "./ping.ts";
 import { withLock } from "./lock.ts";
 import { append, stamp } from "./log.ts";
 
@@ -14,6 +15,7 @@ Usage
   app --for D          send a single day
   app --for-month      send the running month
   app --daemon         watch the target, send whenever the button enables
+  app ping             check the server answers, sends nothing
   app auth             log in only and report whether it worked, sends nothing
   app --dry-run        reach the target, print what the server rendered, sends nothing
   app help             this text
@@ -50,13 +52,16 @@ Output
   click-hung    the click never returned and no alert opened, the page is stuck
   authenticated auth only, the browser moved off the login page
   login-failed  auth only, still on the login page
+  reachable     ping only, the server answered (any status counts)
+  unreachable   ping only, no answer within 15s
 
 With --json the result carries the target url, the send button's state, the
 alert text the page raised, and whether it navigated afterwards.
 
-Exit code 0 for submitted, already-done, and authenticated, 1 otherwise.
+Exit code 0 for submitted, already-done, authenticated, and reachable, 1 otherwise.
 
 Examples
+  app ping --json
   app auth
   app --dry-run --from 04-10-2026 --to 04-10-2026
   app --from 04-10-2026 --to 04-10-2026
@@ -74,11 +79,30 @@ installed.`;
 async function main(args: string[]): Promise<[Result, string, number]> {
   const started = Date.now();
   const secs = (): string => ((Date.now() - started) / 1000).toFixed(1);
-  const mode = args.includes("auth") ? "auth" : args.includes("--dry-run") ? "dry-run" : "send";
+  const mode = args.includes("ping")
+    ? "ping"
+    : args.includes("auth")
+      ? "auth"
+      : args.includes("--dry-run")
+        ? "dry-run"
+        : "send";
 
   try {
     await applyEnvFile(args);
     const cfg = loadConfig(process.env);
+
+    if (mode === "ping") {
+      const p = await ping(cfg);
+      const human =
+        p.outcome === "reachable"
+          ? `${stamp()} ping ${p.url} ${p.status} ${p.latencyMs}ms`
+          : `${stamp()} ping ${p.url} unreachable ${p.error}`;
+      return [
+        { mode, at: stamp(), ms: Date.now() - started, ...p },
+        human,
+        p.outcome === "reachable" ? 0 : 1,
+      ];
+    }
 
     if (mode === "auth") {
       const a = await authenticate(cfg);

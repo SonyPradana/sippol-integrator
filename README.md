@@ -21,6 +21,7 @@ automatically; set `BUN_CHROME_PATH` to override.
 
 ```bash
 bun run src/app.ts help
+bun run start ping
 bun run start auth
 bun run start --dry-run --from 04-10-2026 --to 04-10-2026
 bun run start
@@ -29,6 +30,12 @@ bun run start --for 04-10-2026
 bun run start --for-month
 bun run start --daemon --for-month
 ```
+
+`app ping` sends one HEAD at the login page and reports `reachable` or
+`unreachable`, then stops. Any HTTP status counts as alive — even a 404 — so
+only a network error within 15 seconds is unreachable. The line carries the
+status code, the round-trip latency, and the server header when there is one.
+It never opens a browser and takes no lock; run it before anything else.
 
 `app auth` logs in and reports `authenticated` or `login-failed`, then stops. It
 never opens the target page and never clicks send. It decides by whether the
