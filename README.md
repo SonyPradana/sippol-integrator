@@ -188,15 +188,53 @@ renders its table server-side from the dates in the URL, so an empty range
 renders none. `--dry-run` therefore reports `not-ready` and a real run exits 1
 with `main button not found`. Check the dry run before sending anything.
 
+## Low-spec and VPS
+
+The daemon is built for weak machines: one browser tab for the whole loop, and
+Chrome is spawned with its disk and media caches capped so nothing grows over
+days. On a 2 GB box, guard it with systemd instead of hoping:
+
+```ini
+[Unit]
+Description=sippol-integrator daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sippol
+WorkingDirectory=/home/sippol/sippol
+ExecStart=/home/sippol/sippol/app --daemon --for-month --env-file /home/sippol/sippol/.env
+Restart=always
+RestartSec=60
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`Restart=always` pairs with the daemon dying after 3 failing crawls in a row:
+a dead session restarts the service instead of hanging it. `MemoryMax` kills and
+restarts before the host OOMs. `WorkingDirectory` must stay writable — `logs/`
+and `sippol.lock` always go there (about 10 KB of logs a day, no rotation needed,
+and Chrome's temp profile cleans itself).
+
+On ARM64 (e.g. an Armbian STB) build on the device itself with the official
+aarch64 Bun, or take the `linux-arm64` release asset. Either way a browser is
+still required: `chrome-headless-shell` via `bunx playwright install
+chrome-headless-shell` is the ~100 MB stripped option, and `BUN_CHROME_PATH`
+points at the binary when it lands outside the standard locations.
+
 ## Releases
 
-Push a `v*` tag and the `Release` workflow builds both targets on their own
-runner and attaches two assets to the GitHub release:
+Push a `v*` tag and the `Release` workflow builds every target on its own
+runner and attaches the assets to the GitHub release:
 
-| Asset                                      | Extract with     |
-| ------------------------------------------ | ---------------- |
-| `sippol-integrator-<tag>-windows-x64.zip`  | `Expand-Archive` |
-| `sippol-integrator-<tag>-linux-x64.tar.gz` | `tar -xzf`       |
+| Asset                                        | Extract with     |
+| -------------------------------------------- | ---------------- |
+| `sippol-integrator-<tag>-windows-x64.zip`    | `Expand-Archive` |
+| `sippol-integrator-<tag>-linux-x64.tar.gz`   | `tar -xzf`       |
+| `sippol-integrator-<tag>-linux-arm64.tar.gz` | `tar -xzf`       |
 
 Each holds the executable, `.env.example`, `LICENSE`, and this README, flat, so
 the executable and your `.env` end up side by side. Neither ever contains a real

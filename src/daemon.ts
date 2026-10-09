@@ -8,6 +8,7 @@ import {
   login,
   NAV_GRACE_MS,
   openTarget,
+  openView,
   type Outcome,
   type Selectors,
   targetUrl,
@@ -53,7 +54,7 @@ export async function daemon(
   }
   await Bun.write(LOCK, "");
   // One tab for the whole loop. Each crawl navigates fresh, so no page state leaks.
-  await using view = new Bun.WebView({ backend: { type: "chrome", url: false } });
+  await using view = openView();
 
   try {
     let empty = 0;

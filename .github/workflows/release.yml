@@ -23,6 +23,10 @@ jobs:
             asset: linux-x64
             ext: tar.gz
             bin: ./dist/app
+          - os: ubuntu-24.04-arm
+            asset: linux-arm64
+            ext: tar.gz
+            bin: ./dist/app
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +48,7 @@ jobs:
       # It goes before the smoke test on purpose, so "./dist/app help" below is
       # itself the proof that the binary arrived executable.
       - name: executable bit
-        if: matrix.asset == 'linux-x64'
+        if: startsWith(matrix.asset, 'linux-')
         run: |
           chmod +x dist/app
           test -x dist/app
@@ -61,8 +65,8 @@ jobs:
         run: Compress-Archive -Path dist\app.exe, .env.example, LICENSE, README.md -DestinationPath "sippol-integrator-${{ github.ref_name }}-windows-x64.zip"
 
       - name: package (linux)
-        if: matrix.asset == 'linux-x64'
-        run: tar -czf "sippol-integrator-${{ github.ref_name }}-linux-x64.tar.gz" dist/app .env.example LICENSE README.md
+        if: startsWith(matrix.asset, 'linux-')
+        run: tar -czf "sippol-integrator-${{ github.ref_name }}-${{ matrix.asset }}.tar.gz" dist/app .env.example LICENSE README.md
 
       # Handed to the publish job, because two builds racing two gh release create
       # calls would leave a release with one asset instead of two. If the archive

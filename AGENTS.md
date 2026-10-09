@@ -58,6 +58,10 @@ suite 235s and started timing a test out at its own 30s ceiling.
 - `url: false` in the backend forces a fresh headless Chrome. Without it Bun
   auto-connects to an already-running Chrome if it finds a `DevToolsActivePort`
   file, which opens tabs in the developer's real browser.
+- `openView()` in `flow.ts` passes lean `argv` (`--disk-cache-size=1`
+  `--media-cache-size=1`) so long daemon loops cannot grow a cache on a small
+  disk. `argv` also implies spawn mode, on top of `url: false`. Deliberately no
+  `--no-sandbox` (run as a non-root user instead) and no `--single-process`.
 - **`cdp()` throws `ERR_INVALID_STATE` until the first `navigate()`** has
   completed, because that navigation establishes the session.
 - Each view has one slot per operation kind. Concurrent `navigate()`,
@@ -198,10 +202,11 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
   and `.env` autoload defaults to on.
 - No `--minify`: the bundle is a few KB, and minified stack traces are unreadable
   without a sourcemap.
-- **`release.yml` builds two targets in one matrix, then publishes once.** The two
+- **`release.yml` builds three targets in one matrix, then publishes once.** The
   build legs must not each run `gh release create`, or they race and the release
   ends up with one asset. Hence `upload-artifact` per leg plus a `publish` job
-  gated on `needs: build`.
+  gated on `needs: build`. The `linux-arm64` leg is unproven until the first tag
+  push runs it — same as every other workflow here has ever been.
 - The Linux leg's `chmod +x` runs **before** its smoke test, so `./dist/app help`
   is itself the proof the binary arrived executable. `test -x` after it turns a
   silent `chmod` failure into a red build.

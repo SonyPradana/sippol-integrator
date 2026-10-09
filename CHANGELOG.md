@@ -23,6 +23,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   missing `SIMPUS_*` keys, so the shell and the CWD `.env` keep winning and no
   other variable can be set through it. A missing path or unreadable file is an
   error instead of a silent fallback.
+- Lean Chrome flags (`--disk-cache-size=1 --media-cache-size=1`) on every
+  `openView()`, for long daemon loops on low-spec machines. `argv` also forces
+  spawn mode, so a run never attaches to a stray Chrome.
+- A `linux-arm64` release leg, built natively on an ARM runner. Unproven until
+  the first tag push runs it — same as every other workflow here has ever been.
 
 ### Changed
 

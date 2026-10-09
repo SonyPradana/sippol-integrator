@@ -149,8 +149,15 @@ export async function dryRun(
   return { ...page, button: await buttonState(view, sel.mainButton) };
 }
 
-function openView(): Bun.WebView {
-  return new Bun.WebView({ backend: { type: "chrome", url: false } });
+export function openView(): Bun.WebView {
+  // Lean flags for low-spec machines and long daemon loops: the disk and media
+  // caches may not grow inside one profile, which lives for the whole loop.
+  // Deliberately not --no-sandbox (run as a non-root user instead) and not
+  // --single-process (stability). argv also forces spawn mode, so a run never
+  // attaches to a stray Chrome.
+  return new Bun.WebView({
+    backend: { type: "chrome", url: false, argv: ["--disk-cache-size=1", "--media-cache-size=1"] },
+  });
 }
 
 export async function openTarget(view: Bun.WebView, cfg: Config, argv: string[]): Promise<string> {
