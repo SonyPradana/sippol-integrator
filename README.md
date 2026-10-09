@@ -221,9 +221,13 @@ and Chrome's temp profile cleans itself).
 
 On ARM64 (e.g. an Armbian STB) build on the device itself with the official
 aarch64 Bun, or take the `linux-arm64` release asset. Either way a browser is
-still required: `chrome-headless-shell` via `bunx playwright install
-chrome-headless-shell` is the ~100 MB stripped option, and `BUN_CHROME_PATH`
-points at the binary when it lands outside the standard locations.
+still required: `chromium-headless-shell` via `bunx playwright install
+chromium-headless-shell` is the ~100 MB stripped option. Minimal distros also
+need its system libraries: `sudo bunx playwright install-deps
+chromium-headless-shell` (a missing `libnspr4.so` shows up as `Chrome process
+closed the pipe`). `BUN_CHROME_PATH` points at the binary when it lands outside
+the standard locations, e.g.
+`~/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux-arm64/chrome-headless-shell`.
 
 ## Releases
 
