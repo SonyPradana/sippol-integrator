@@ -19,6 +19,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   last row number, and the outcome. It stops on Ctrl+C or after `--max-empty`
   empty crawls in a row (default 5); `--dry-run` turns it into a monitor that
   never sends.
+- The `--env-file PATH` flag: it reads one more `.env` file, filling only
+  missing `SIMPUS_*` keys, so the shell and the CWD `.env` keep winning and no
+  other variable can be set through it. A missing path or unreadable file is an
+  error instead of a silent fallback.
 
 ### Changed
 

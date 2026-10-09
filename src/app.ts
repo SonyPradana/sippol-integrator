@@ -1,4 +1,4 @@
-import { loadConfig } from "./config.ts";
+import { applyEnvFile, loadConfig } from "./config.ts";
 import { daemon } from "./daemon.ts";
 import { authenticate, dryRun, run } from "./flow.ts";
 import { withLock } from "./lock.ts";
@@ -28,6 +28,7 @@ Flags
   --interval N  minutes between crawls, counted from the previous crawl's end
                 (default 15, 1-60)
   --max-empty N stop after this many empty crawls in a row (default 5, 1-20)
+  --env-file P  read one more .env from P, fills only keys missing from the env
   --json        machine-readable result on stdout, log file stays human
   Dates are optional and independent. --from and --to each override the side
   they name if --for or --for-month was given too. The page rejects ranges
@@ -76,6 +77,7 @@ async function main(args: string[]): Promise<[Result, string, number]> {
   const mode = args.includes("auth") ? "auth" : args.includes("--dry-run") ? "dry-run" : "send";
 
   try {
+    await applyEnvFile(args);
     const cfg = loadConfig(process.env);
 
     if (mode === "auth") {
@@ -149,6 +151,7 @@ if (args.some((a) => a === "help" || a === "--help" || a === "-h")) {
 // Before main(), so a daemon never falls through to the one-shot send path.
 if (args.includes("--daemon") || args.includes("daemon")) {
   try {
+    await applyEnvFile(args);
     await daemon(loadConfig(process.env), args);
     process.exit(0);
   } catch (err) {

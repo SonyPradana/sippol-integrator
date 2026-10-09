@@ -54,6 +54,13 @@ explicit `--from` or `--to` still wins over the side it names.
 taken from the local clock. An explicit `--from` or `--to` still wins over the
 side it names.
 
+`--env-file PATH` reads one more `.env` file, but only `SIMPUS_*` keys the
+environment does not already have — the shell and the `.env` in the working
+directory keep winning. A missing path or unreadable file is an error. This is how Task
+Scheduler runs it with the `.env` kept elsewhere: pass
+`--env-file C:\path\to\.env`, and still point "Start in" at a writable
+directory, because `logs/` and `sippol.lock` always go to the working directory.
+
 `--daemon` keeps one browser tab open and crawls the target every `--interval`
 minutes (default 15, counted from the previous crawl's end), sending the moment
 the button enables. Each crawl logs its time, the table's last row number, and

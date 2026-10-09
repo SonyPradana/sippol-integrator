@@ -235,6 +235,11 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
 - Dotenv precedence is the other half of that trap: a real environment variable
   beats `.env`. That is what makes `SIMPUS_*` overridable from the shell, and what
   made the unprefixed version silently wrong. `src/config.test.ts` pins it.
+- `--env-file PATH` (`applyEnvFile` in `src/config.ts`) is the lowest-priority
+  source: it only fills missing `SIMPUS_*` keys, nothing else, so an env file can
+  never set `PATH` or any other variable. A missing path or unreadable file
+  throws. `logs/` and `sippol.lock` still follow the working directory, so Task
+  Scheduler still needs a writable "Start in".
 - **Login is judged by URL, never by the login field.** See the Target app section.
 - `.env` holds real credentials and is gitignored. `.env.example` is the shape.
 - The host is an internal RFC1918 address and is deliberately replaced with
