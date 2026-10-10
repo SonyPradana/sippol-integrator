@@ -1,10 +1,14 @@
 name: Test
 
+# workflow_call lets release.yml run this as a gate job before it builds, so
+# a tag push discovers a broken check in the same workflow instead of shipping
+# an asset built off one. The push/pull_request triggers stay for branches.
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_call:
 
 # A new push to the same branch makes the previous run irrelevant.
 concurrency:

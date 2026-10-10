@@ -10,9 +10,18 @@ permissions:
   contents: write
 
 jobs:
+  # The check runs here rather than inside each build leg. Tags never had it —
+  # test.yml only watches main and PRs — so a tag was the first place a broken
+  # build could appear, and one leg failing used to cancel the other two. The
+  # browser tests need Chrome, which only the x64 and Windows runners have.
+  test:
+    uses: ./.github/workflows/test.yml
+
   build:
+    needs: test
     name: ${{ matrix.asset }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -37,12 +46,11 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      # Full check, not just compile. test.yml does not run for tags, and a tag
-      # should never be the thing that discovers the build was broken. Its last
-      # step is the compile, which is also what produces the asset here, natively
-      # for whichever runner this is. No --target needed: each runner builds for
-      # itself.
-      - run: bun run check
+      # Compile only. fmt, lint, typecheck and the browser tests belong to the
+      # test job above, and Chrome lives on neither the arm64 runner nor the
+      # compile step. No --target: each runner builds for itself, so this is the
+      # step that produces the asset.
+      - run: bun run compile
 
       # NTFS stores no Unix mode bits, so this cannot be assumed from the compile.
       # It goes before the smoke test on purpose, so "./dist/app help" below is

@@ -209,8 +209,15 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
 - **`release.yml` builds three targets in one matrix, then publishes once.** The
   build legs must not each run `gh release create`, or they race and the release
   ends up with one asset. Hence `upload-artifact` per leg plus a `publish` job
-  gated on `needs: build`. The `linux-arm64` leg is unproven until the first tag
-  push runs it — same as every other workflow here has ever been.
+  gated on `needs: build`.
+- **A build leg runs `bun run compile`, never `bun run check`.** The check lives
+  in `test.yml`, which release now calls as a gate job via `workflow_call`
+  (`needs: test`), because `test.yml` only watches main and PRs and a tag was
+  otherwise the first place a broken build could appear. The browser tests need
+  Chrome, and **the `ubuntu-24.04-arm` runner image ships neither Chrome nor
+  Chromium** — only Firefox and Selenium. v0.4.0 was red exactly that way: one leg
+  failed on `Failed to spawn Chrome` and fail-fast cancelled the other two.
+  `strategy.fail-fast: false` is there so one dead leg stops cancelling the rest.
 - The Linux leg's `chmod +x` runs **before** its smoke test, so `./dist/app help`
   is itself the proof the binary arrived executable. `test -x` after it turns a
   silent `chmod` failure into a red build.
@@ -265,4 +272,5 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
   login page may gain a CSRF field; if login starts failing again, dump the form
   before touching `src/flow.ts`.
 - CI does not run the automation; it needs the internal network and credentials.
-  `.github/workflows/test.yml` and `release.yml` have never run.
+  `.github/workflows/test.yml` and `release.yml` have run on real pushes now, and
+  both are covered by the browser tests against `src/fixture/`.
