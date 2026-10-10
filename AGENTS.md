@@ -168,10 +168,40 @@ Login page and target page selectors live in `DEFAULT_SELECTORS` in `src/flow.ts
   every credential and selector failure.
 - `--daemon` is the long-running watch in `src/daemon.ts`: one `Bun.WebView` for
   the whole loop, one crawl per `--interval` minutes counted from the previous
-  crawl's end, send the moment the button enables. It stops on Ctrl+C or after
-  `--max-empty` empty crawls in a row, and logs back in (up to 3 failing crawls
-  in a row) when the session bounces to the login page. `--dry-run` makes it a
-  monitor that never sends and never counts an enabled button as empty.
+  crawl's end, send the moment the button enables. It stops on Ctrl+C, on
+  SIGTERM (`systemctl stop`), or after `--max-empty` empty crawls in a row, and
+  logs back in (up to 3 failing crawls in a row) when the session bounces to the
+  login page. `--dry-run` makes it a monitor that never sends and never counts an
+  enabled button as empty.
+- **`SIGTERM` is trapped, not just `SIGINT`.** The README's own systemd unit uses
+  `systemctl stop`, and a default SIGTERM kills the process outright: no `finally`,
+  so `sippol.lock` is left behind and the recap never prints. `SIGNALS` in
+  `daemon.ts` lists both and `finally` unregisters the same set.
+- **A stop always prints a recap line** (`recapLine` in `daemon.ts`):
+  `crawls`, `sends`, `rows` (the row count of the **last** submission), `avg-dur`,
+  `avg-rss`, and total lifetime. It goes to stdout and to the log, and it prints
+  from `finally` so the give-up path (`MAX_FAILS` session failures) reports too.
+  `avg-rss` is `process.memoryUsage().rss` sampled once per crawl, for the
+  **daemon process only** — Chrome runs as a child process, so including it needs
+  a per-platform `/proc` read, which is why it does not. A retry costs neither a
+  `crawls` nor a duration, because it never reached the page.
+- **The stop line says why, and "giving up" is not "max-empty reached".** The
+  first version labelled a give-up `max-empty reached (0)`, which sends an
+  operator hunting in the wrong place. `tally()` never returns for the retry
+  variant, so the two exits are told apart before anything is printed.
+- **`rows` is never summed across crawls.** The loop re-crawls the same date range
+  for its whole life, so a range that grows mid-month is submitted again with
+  more rows and a sum would report the first period twice. `tally()` is pure and
+  tested for exactly this, because it is the accounting a wrong sum would hide in.
+  It is also the reason the accounting is a pure fold at all: in the loop body it
+  is untestable, because reaching the loop needs a live browser.
+- **An enabled button resets the empty streak, even under `--dry-run`.** A monitor
+  that stops after `--max-empty` sightings of the thing it is waiting for is not a
+  monitor; the code used to reset the streak only on a real send.
+- **`TimeoutStopSec` must exceed `SIMPUS_TIMEOUT_MS`.** The stop flag is only
+  read between crawls, so `systemctl stop` waits for the crawl in flight. The
+  systemd default is 90s, which is shorter than a send waiting on this server and
+  would SIGKILL the daemon before the recap prints and before `sippol.lock` goes.
 - "authenticated" means the browser moved off the login URL, not that a session token
   was issued. The target page can still bounce back to the login page later, which is
   what `assertAuthenticated` guards.

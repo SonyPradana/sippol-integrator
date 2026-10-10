@@ -71,8 +71,25 @@ directory, because `logs/` and `sippol.lock` always go to the working directory.
 `--daemon` keeps one browser tab open and crawls the target every `--interval`
 minutes (default 15, counted from the previous crawl's end), sending the moment
 the button enables. Each crawl logs its time, the table's last row number, and
-the outcome. It stops on Ctrl+C or after `--max-empty` empty crawls in a row
-(default 5). `--daemon --dry-run` only watches and never sends.
+the outcome. It stops on Ctrl+C or SIGTERM (`systemctl stop`) or after
+`--max-empty` empty crawls in a row (default 5). `--daemon --dry-run` only
+watches and never sends.
+
+Every stop prints a recap line, to stdout and to the log:
+
+```
+2026-10-10T04:12:07.221+07:00 daemon stopped by signal (7194.9s)
+2026-10-10T04:12:07.222+07:00 recap crawls=240 sends=2 rows=142 avg-dur=2.4s avg-rss=91.3MB total=7194.9s
+```
+
+`rows` is only the rows the last submission sent (never a sum — one range is
+re-crawled all month, and summing would double-count it), and `avg-rss` is this
+process, not Chrome, which runs separately and is not included.
+
+`systemctl stop` is trapped as well as Ctrl+C, so the lock is released and the
+recap prints. Give the unit a `TimeoutStopSec` above `SIMPUS_TIMEOUT_MS`: the
+stop flag is only read between crawls, so a send in flight has to finish first
+and a shorter timeout kills the process before it can report anything.
 
 Output is `submitted`, `already-done`, `failed`, `timed-out`, or `click-hung`,
 prefixed with an ISO timestamp and the elapsed seconds. `auth` reports
@@ -215,6 +232,10 @@ ExecStart=/home/sippol/sippol/app --daemon --for-month --env-file /home/sippol/s
 Restart=always
 RestartSec=60
 MemoryMax=1G
+# Above SIMPUS_TIMEOUT_MS, because the daemon only reads the stop flag between
+# crawls and a send can legitimately be waiting that long. Shorter than that and
+# systemctl stop SIGKILLs mid-crawl: no recap, no lock cleanup.
+TimeoutStopSec=150
 
 [Install]
 WantedBy=multi-user.target
